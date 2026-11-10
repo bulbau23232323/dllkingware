@@ -39,8 +39,8 @@ jobs:
               encoded = base64.b64encode(data).decode('ascii')
               if len(encoded) > 300000:
                   raise SystemExit(label + ' too large to inspect safely')
-              for index in range(0, len(encoded), 12000):
-                  notice(label + '-' + str(index // 12000), encoded[index:index+12000])
+              for index in range(0, len(encoded), 3000):
+                  notice(label + '-' + str(index // 3000), encoded[index:index+3000])
           with zipfile.ZipFile(p) as z:
               info = z.infolist()
               if len(info) > 10000 or sum(i.file_size for i in info) > 200_000_000:
@@ -48,9 +48,12 @@ jobs:
               notice('metadata', 'sha256=' + actual + '; entries=' + str(len(info)) + '; uncompressed=' + str(sum(i.file_size for i in info)))
               manifest = [[i.filename, i.file_size, i.compress_size] for i in info if not i.is_dir()]
               chunks('manifest', json.dumps(manifest, ensure_ascii=True, separators=(',', ':')).encode())
-              # Read only a specifically named source header, with a strict size cap.
-              matches = [i for i in info if re.search(r'(^|/)memify\.h$', i.filename, re.I)]
-              for n, i in enumerate(matches[:3]):
+              # Read only a few relevant source files as text, with strict size caps.
+              selected = {'source/Core/mem/memify.h', 'source/Core/main.cpp',
+                          'source/Core/spoofer_integration.h',
+                          'source/Spoofer/workspace/core/service/driver/driver.hxx'}
+              matches = [i for i in info if i.filename in selected]
+              for n, i in enumerate(matches[:4]):
                   if i.file_size <= 100000:
                       notice('selected-path-' + str(n), i.filename)
                       chunks('selected-' + str(n), z.read(i))
