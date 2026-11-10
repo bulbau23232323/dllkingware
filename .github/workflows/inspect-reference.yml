@@ -49,7 +49,8 @@ jobs:
               manifest = [[i.filename, i.file_size, i.compress_size] for i in info if not i.is_dir()]
               chunks('manifest', json.dumps(manifest, ensure_ascii=True, separators=(',', ':')).encode())
               # Read only a few relevant source files as text, with strict size caps.
-              selected = {'source/Core/mem/memify.h', 'source/Core/main.cpp',
+              selected = {'source/Core/sdk.h', 'source/Core/mem/memify.h',
+                          'source/Core/main.cpp',
                           'source/Core/spoofer_integration.h',
                           'source/Spoofer/workspace/core/service/driver/driver.hxx'}
               matches = [i for i in info if i.filename in selected]
