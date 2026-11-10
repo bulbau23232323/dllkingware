@@ -27,7 +27,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
 
-      - name: Build
+      - name: Build with MSVC
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Continue'

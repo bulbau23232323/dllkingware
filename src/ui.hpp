@@ -26,7 +26,7 @@ struct AppState {
 
 struct Fonts {
     ImFont* regular = nullptr;
-    ImFont* small = nullptr;
+    ImFont* small_font = nullptr;
     ImFont* tiny = nullptr;
     ImFont* bold = nullptr;
     ImFont* heading = nullptr;

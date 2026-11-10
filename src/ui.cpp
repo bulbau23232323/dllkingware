@@ -143,7 +143,7 @@ struct Renderer {
         ImU32 bg = primary ? (hovered ? ORANGE_LIGHT : ORANGE) : (hovered ? IM_COL32(42, 42, 42, 255) : IM_COL32(32, 33, 34, 255));
         d->AddRectFilled(p, add(p, size), bg, S(4));
         if (!primary) d->AddRect(p, add(p, size), BORDER, S(4), 0, S(1));
-        centered(d, f.small, p.x + size.x * .5f, p.y + (size.y - f.small->FontSize) * .5f,
+        centered(d, f.small_font, p.x + size.x * .5f, p.y + (size.y - f.small_font->FontSize) * .5f,
                  primary ? IM_COL32(28, 20, 15, 255) : WHITE, label);
         if (ImGui::IsItemFocused() && ImGui::GetIO().NavVisible)
             d->AddRect(add(p, S(-2), S(-2)), add(add(p, size), S(2), S(2)), ORANGE, S(5), 0, S(1));
@@ -160,7 +160,7 @@ struct Renderer {
         if (hovered) d->AddRectFilled(add(p, S(-7), S(1)), add(p, w + S(7), height - S(1)), IM_COL32(255,255,255,6), S(4));
         const float ty = p.y + (description ? S(4) : (height - f.regular->FontSize) * 0.5f);
         text(d, f.regular, ImVec2(p.x, ty), WHITE, label);
-        if (description) text(d, f.small, add(p, 0, S(26)), DIM, description);
+        if (description) text(d, f.small_font, add(p, 0, S(26)), DIM, description);
         const ImVec2 a(p.x + w - S(34), p.y + (height - S(19)) * 0.5f);
         d->AddRectFilled(a, add(a, S(34), S(19)), value ? ORANGE : IM_COL32(53, 55, 55, 255), S(10));
         d->AddCircleFilled(add(a, S(value ? 24.5f : 9.5f), S(9.5f)), S(6.3f), value ? IM_COL32(35, 24, 18, 255) : IM_COL32(145, 146, 145, 255), 20);
@@ -175,7 +175,7 @@ struct Renderer {
         const float control_w = std::min(S(164), w * 0.49f);
         ImGui::SetCursorScreenPos(add(p, w - control_w, 0));
         ImGui::SetNextItemWidth(control_w);
-        ImGui::PushFont(f.small);
+        ImGui::PushFont(f.small_font);
         current = std::clamp(current, 0, count - 1);
         if (ImGui::BeginCombo(id, choices[current], ImGuiComboFlags_HeightLargest)) {
             for (int i = 0; i < count; ++i) {
@@ -223,9 +223,9 @@ struct Renderer {
     void color_row(const char* id, ImVec2 p, float w, const char* label, const char* detail, float color[4]) const {
         auto* d = ImGui::GetWindowDrawList();
         text(d, f.regular, add(p, 0, S(5)), WHITE, label);
-        right(d, f.small, p.x + w - S(44), p.y + S(7), DIM, detail);
+        right(d, f.small_font, p.x + w - S(44), p.y + S(7), DIM, detail);
         ImGui::SetCursorScreenPos(add(p, w - S(28), 0));
-        ImGui::PushFont(f.small);
+        ImGui::PushFont(f.small_font);
         ImGui::ColorEdit4(id, color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel |
                                     ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoTooltip);
         ImGui::PopFont();
@@ -309,10 +309,10 @@ struct Renderer {
         d->AddRect(ImVec2(S(12), bottom), ImVec2(S(206), height - S(18)), BORDER, S(5), 0, S(1));
         text(d, f.tiny, ImVec2(S(26), bottom + S(14)), DIM, "СОСТОЯНИЕ СИСТЕМЫ");
         dot(d, ImVec2(S(29), bottom + S(46)), state.driver_state == DriverState::Connected ? GREEN : ORANGE, 3);
-        text(d, f.small, ImVec2(S(39), bottom + S(39)), WHITE, "Драйвер");
+        text(d, f.small_font, ImVec2(S(39), bottom + S(39)), WHITE, "Драйвер");
         right(d, f.tiny, S(191), bottom + S(41), state.driver_state == DriverState::Connected ? GREEN : ORANGE_LIGHT, driver_label(state.driver_state));
         dot(d, ImVec2(S(29), bottom + S(73)), DIM, 3);
-        text(d, f.small, ImVec2(S(39), bottom + S(66)), MUTED, "Rust");
+        text(d, f.small_font, ImVec2(S(39), bottom + S(66)), MUTED, "Rust");
         right(d, f.tiny, S(191), bottom + S(68), DIM, "НЕ ПРОВЕРЕН");
         line(d, ImVec2(S(26), bottom + S(91)), ImVec2(S(192), bottom + S(91)));
         text(d, f.tiny, ImVec2(S(26), bottom + S(100)), DIM, "ТОЛЬКО ИНТЕРФЕЙС / 0.1");
@@ -450,7 +450,7 @@ struct Renderer {
                 d->AddRectFilled(ImVec2(box_b.x + S(4), box_a.y), ImVec2(box_b.x + S(8), box_b.y), IM_COL32(19, 22, 26, 255));
                 d->AddRectFilled(ImVec2(box_b.x + S(4), box_b.y - (box_b.y-box_a.y)*.62f), ImVec2(box_b.x + S(8), box_b.y), BLUE);
             }
-            if (state.settings.visual_name) centered(d, f.small, cx, top - S(18), WHITE, "WANDERER");
+            if (state.settings.visual_name) centered(d, f.small_font, cx, top - S(18), WHITE, "WANDERER");
             if (state.settings.visual_weapon) centered(d, f.tiny, cx, box_b.y + S(4), WHITE, "ASSAULT RIFLE");
             if (state.settings.visual_distance) centered(d, f.tiny, cx, box_b.y + S(state.settings.visual_weapon ? 18 : 4), MUTED, "78 M");
         }
@@ -461,7 +461,7 @@ struct Renderer {
         d->PopClipRect();
         d->AddRect(a, b, BORDER_SUBTLE, S(4), 0, S(1));
         dot(d, add(p, S(20), S(385)), ORANGE, 3);
-        text(d, f.small, add(p, S(30), S(378)), WHITE, "Демонстрационные данные");
+        text(d, f.small_font, add(p, S(30), S(378)), WHITE, "Демонстрационные данные");
         text(d, f.tiny, add(p, S(30), S(398)), DIM,
              state.settings.visual_distance_max < 78.0f ? "ЦЕЛЬ ЗА ПРЕДЕЛАМИ ДИСТАНЦИИ" : "НАСТРОЙКИ ПРИМЕНЯЮТСЯ СРАЗУ");
     }
@@ -488,7 +488,7 @@ struct Renderer {
         card_header(q, w, "CHAMS", "ТОЛЬКО ПРЕВЬЮ");
         const char* modes[] = {"Отключены", "Заливка", "Контур", "Сетка"};
         combo("##chams", add(q, pad, S(59)), inner, "Стиль модели", state.settings.visual_chams, modes, 4);
-        text(ImGui::GetWindowDrawList(), f.small, add(q, pad, S(96)), DIM, "В игре отрисовка не подключена");
+        text(ImGui::GetWindowDrawList(), f.small_font, add(q, pad, S(96)), DIM, "В игре отрисовка не подключена");
     }
 
     void visual_right(ImVec2 p, float w) {
@@ -565,7 +565,7 @@ struct Renderer {
         d->PopClipRect();
         d->AddRect(a, b, BORDER_SUBTLE, S(4), 0, S(1));
         dot(d, add(p, S(20), S(385)), solution ? GREEN : ORANGE, 3);
-        text(d, f.small, add(p, S(30), S(378)), WHITE, solution ? "Тестовая цель выбрана" : "Тестовая цель не выбрана");
+        text(d, f.small_font, add(p, S(30), S(378)), WHITE, solution ? "Тестовая цель выбрана" : "Тестовая цель не выбрана");
         text(d, f.tiny, add(p, S(30), S(398)), DIM, "ДВИЖЕНИЕ МЫШИ И ИГРА НЕ УПРАВЛЯЮТСЯ");
     }
 
@@ -612,20 +612,20 @@ struct Renderer {
         toggle("##resolver-interpolation", add(p, pad, S(156)), inner, "Интерполяция", state.settings.resolver_interpolation);
         const char* modes[] = {"Адаптивный", "Скорость", "Интерполяция"};
         combo("##resolver-mode", add(p, pad, S(204)), inner, "Режим коррекции", state.settings.resolver_mode, modes, 3);
-        text(ImGui::GetWindowDrawList(), f.small, add(p, pad, S(251)), DIM, "Алгоритм для Rust пока не подключён");
+        text(ImGui::GetWindowDrawList(), f.small_font, add(p, pad, S(251)), DIM, "Алгоритм для Rust пока не подключён");
 
         const ImVec2 q = add(p, 0, S(295));
         card(q, w, 210);
         card_header(q, w, "ПАРАМЕТРЫ", "PREDICTION");
         slider("##resolver-strength", add(q, pad, S(60)), inner, "Сила коррекции", state.settings.resolver_strength, 0, 100, "%");
         slider("##resolver-time", add(q, pad, S(116)), inner, "Макс. время прогноза", state.settings.resolver_max_time, 0, 300, " ms");
-        text(ImGui::GetWindowDrawList(), f.small, add(q, pad, S(177)), DIM, "Значения сохраняются в профиль");
+        text(ImGui::GetWindowDrawList(), f.small_font, add(q, pad, S(177)), DIM, "Значения сохраняются в профиль");
     }
 
     void status_line(ImVec2 p, float w, const char* label, const char* value, ImU32 color = DIM) const {
         auto* d = ImGui::GetWindowDrawList();
         text(d, f.regular, p, MUTED, label);
-        right(d, f.small, p.x + w, p.y + S(1), color, value);
+        right(d, f.small_font, p.x + w, p.y + S(1), color, value);
     }
 
     void resolver_right(ImVec2 p, float w) {
@@ -650,7 +650,7 @@ struct Renderer {
         status_line(add(p, S(18), S(275)), w-S(36), "Скорость цели", "НЕ ДОСТУПНА");
         status_line(add(p, S(18), S(308)), w-S(36), "Расчёт для игры", "НЕ ПОДКЛЮЧЁН");
         line(d, add(p, S(18), S(338)), add(p, w-S(18), S(338)));
-        text(d, f.small, add(p, S(18), S(349)), DIM, "Драйвер и данные Rust необходимы отдельно.");
+        text(d, f.small_font, add(p, S(18), S(349)), DIM, "Драйвер и данные Rust необходимы отдельно.");
     }
 
     void misc_left(ImVec2 p, float w) {
@@ -660,18 +660,18 @@ struct Renderer {
         toggle("##watermark", add(p, pad, S(58)), inner, "Watermark в превью", state.settings.misc_watermark);
         toggle("##fps", add(p, pad, S(98)), inner, "FPS интерфейса", state.settings.misc_fps);
         toggle("##crosshair", add(p, pad, S(138)), inner, "Прицел в превью", state.settings.misc_crosshair);
-        text(ImGui::GetWindowDrawList(), f.small, add(p, pad, S(183)), DIM, "Внешний игровой оверлей не подключён");
+        text(ImGui::GetWindowDrawList(), f.small_font, add(p, pad, S(183)), DIM, "Внешний игровой оверлей не подключён");
 
         const ImVec2 q = add(p, 0, S(224));
         card(q, w, 188);
         card_header(q, w, "ПРОФИЛЬ", "ЛОКАЛЬНО");
         auto* d = ImGui::GetWindowDrawList();
         text(d, f.regular, add(q, pad, S(63)), WHITE, "Параметры приложения");
-        text(d, f.small, add(q, pad, S(86)), DIM, "Изменения сохраняются автоматически");
+        text(d, f.small_font, add(q, pad, S(86)), DIM, "Изменения сохраняются автоматически");
         if (button("##save-profile", add(q, pad, S(119)), V(132, 33), "СОХРАНИТЬ", true)) state.request_save = true;
         if (button("##reset-profile", add(q, pad + S(142), S(119)), V(108, 33), "СБРОСИТЬ")) ImGui::OpenPopup("Сбросить настройки?");
         if (state.profile_status == ProfileStatus::Error) {
-            text(d, f.small, add(q, pad, S(162)), ORANGE_LIGHT, "Ошибка профиля: подробности в Debug");
+            text(d, f.small_font, add(q, pad, S(162)), ORANGE_LIGHT, "Ошибка профиля: подробности в Debug");
         }
         ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * .5f, ImGui::GetIO().DisplaySize.y * .5f), ImGuiCond_Appearing, ImVec2(.5f,.5f));
         if (ImGui::BeginPopupModal("Сбросить настройки?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -696,15 +696,15 @@ struct Renderer {
         d->AddRectFilled(a, add(a, S(42), S(42)), ORANGE_DARK, S(5));
         icon(d, 3, add(a, S(21), S(21)), ORANGE);
         text(d, f.bold, add(p, S(73), S(65)), WHITE, "Внешний интерфейс");
-        text(d, f.small, add(p, S(73), S(88)), DIM, "C++  /  DEAR IMGUI  /  DIRECTX 11");
+        text(d, f.small_font, add(p, S(73), S(88)), DIM, "C++  /  DEAR IMGUI  /  DIRECTX 11");
         separator(add(p, S(18), S(130)), w - S(36));
         status_line(add(p, S(18), S(148)), w-S(36), "Режим", "DEMO", ORANGE_LIGHT);
         status_line(add(p, S(18), S(183)), w-S(36), "Профиль", profile_label(state.profile_status), state.profile_status == ProfileStatus::Error ? ORANGE_LIGHT : WHITE);
         status_line(add(p, S(18), S(218)), w-S(36), "Подключение Rust", "НЕТ", DIM);
         separator(add(p, S(18), S(254)), w - S(36));
-        text(d, f.small, add(p, S(18), S(270)), MUTED, "Настройки влияют только на GUI и демо.");
-        text(d, f.small, add(p, S(18), S(294)), DIM, "Путь профиля: %APPDATA%\\Kingware");
-        text(d, f.small, add(p, S(18), S(315)), DIM, "Для подключения нужны исходники backend.");
+        text(d, f.small_font, add(p, S(18), S(270)), MUTED, "Настройки влияют только на GUI и демо.");
+        text(d, f.small_font, add(p, S(18), S(294)), DIM, "Путь профиля: %APPDATA%\\Kingware");
+        text(d, f.small_font, add(p, S(18), S(315)), DIM, "Для подключения нужны исходники backend.");
     }
 
     void debug_left(ImVec2 p, float w) {
@@ -717,22 +717,22 @@ struct Renderer {
         status_line(add(p, S(18), S(178)), w-S(36), "Aimbot / ESP", "ТОЛЬКО ДЕМО", ORANGE_LIGHT);
         status_line(add(p, S(18), S(215)), w-S(36), "Offsets", "НЕ ПРОВЕРЕНЫ", ORANGE_LIGHT);
         separator(add(p, S(18), S(249)), w-S(36));
-        text(d, f.small, add(p, S(18), S(263)), DIM,
+        text(d, f.small_font, add(p, S(18), S(263)), DIM,
              state.driver_state == DriverState::NotImplemented ? "Проверка драйвера в этой версии отсутствует." : "Состояние предоставлено адаптером драйвера.");
 
         const ImVec2 q = add(p, 0, S(312));
         card(q, w, 176);
         card_header(q, w, "ИНТЕГРАЦИЯ", "СЛЕДУЮЩИЙ ШАГ");
         text(d, f.regular, add(q, S(18), S(64)), WHITE, "Нужен исходный код backend");
-        text(d, f.small, add(q, S(18), S(90)), MUTED, "Интерфейс драйвера, версия игры, цепочки");
-        text(d, f.small, add(q, S(18), S(111)), MUTED, "объектов и способ получения матрицы камеры.");
+        text(d, f.small_font, add(q, S(18), S(90)), MUTED, "Интерфейс драйвера, версия игры, цепочки");
+        text(d, f.small_font, add(q, S(18), S(111)), MUTED, "объектов и способ получения матрицы камеры.");
         if (state.profile_status == ProfileStatus::Error && !state.profile_error.empty()) {
             ImGui::SetCursorScreenPos(add(q, S(18), S(140)));
             ImGui::InvisibleButton("##profile-error", ImVec2(w - S(36), S(24)), ImGuiButtonFlags_EnableNav);
-            text(d, f.small, add(q, S(18), S(146)), ORANGE_LIGHT, "Ошибка профиля: наведите для деталей");
+            text(d, f.small_font, add(q, S(18), S(146)), ORANGE_LIGHT, "Ошибка профиля: наведите для деталей");
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", state.profile_error.c_str());
         } else {
-            text(d, f.small, add(q, S(18), S(146)), DIM, "В профиле: только настройки интерфейса.");
+            text(d, f.small_font, add(q, S(18), S(146)), DIM, "В профиле: только настройки интерфейса.");
         }
     }
 
@@ -744,13 +744,13 @@ struct Renderer {
         const float pad = S(18), inner = w - 2*pad;
         ImGui::SetCursorScreenPos(add(p, pad, S(62)));
         ImGui::SetNextItemWidth(inner);
-        ImGui::PushFont(f.small);
+        ImGui::PushFont(f.small_font);
         ImGui::InputTextWithHint("##offset-filter", "Поиск по группе или имени...", state.offset_filter, sizeof(state.offset_filter));
         ImGui::PopFont();
         auto* d = ImGui::GetWindowDrawList();
-        text(d, f.small, add(p, pad, S(102)), DIM, "Значения из сообщения, без проверки версии.");
+        text(d, f.small_font, add(p, pad, S(102)), DIM, "Значения из сообщения, без проверки версии.");
         ImGui::SetCursorScreenPos(add(p, pad, S(128)));
-        ImGui::PushFont(f.small);
+        ImGui::PushFont(f.small_font);
         const ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH |
                                       ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoSavedSettings;
         if (ImGui::BeginTable("##offset-table", 3, flags, ImVec2(inner, S(377)))) {
@@ -862,7 +862,7 @@ void Interface::configure(float dpi_scale) {
     mono.emplace_back("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
 #endif
     fonts_.regular = load_font(regular, 14.0f * scale_, cyrillic);
-    fonts_.small = load_font(regular, 12.0f * scale_, cyrillic);
+    fonts_.small_font = load_font(regular, 12.0f * scale_, cyrillic);
     fonts_.tiny = load_font(bold, 10.0f * scale_, cyrillic);
     fonts_.bold = load_font(bold, 14.0f * scale_, cyrillic);
     fonts_.heading = load_font(bold, 25.0f * scale_, cyrillic);
