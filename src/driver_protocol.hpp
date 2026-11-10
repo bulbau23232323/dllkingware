@@ -5,19 +5,28 @@
 // Shared description of the Rizg Yaw kernel driver interface.
 //
 // The driver is a minimal read/write memory provider for the external game
-// client. It exposes exactly three operations: attach to a process, resolve a
-// module base address and copy memory to or from the target. Nothing in this
-// protocol touches files, the registry, the network or any other process.
+// client. It exposes exactly a handful of operations: attach to a process,
+// resolve a module base address and copy memory to or from the target.
+// Nothing in this protocol touches files, the registry, the network or any
+// other process.
 //
 // Device path (user mode):  \\.\RizgYaw
 // Device name (kernel mode): \Device\RizgYaw
 // Symbolic link:             \DosDevices\RizgYaw
+//
+// driver/RizgYaw.c implements exactly this contract. Both sides must be
+// changed together; the version field below is bumped for every change.
 
 namespace kingware::driver {
 
 inline constexpr wchar_t kDevicePath[] = L"\\\\.\\RizgYaw";
 
-inline constexpr std::uint32_t kIoctlType = 0x8000u; // FILE_DEVICE_UNKNOWN
+// FILE_DEVICE_UNKNOWN with a vendor specific function range so the control
+// codes cannot collide with a standard device.
+inline constexpr std::uint32_t kDeviceType = 0x22;
+inline constexpr std::uint32_t kFunctionBase = 0x800;
+inline constexpr std::uint32_t kMethodBuffered = 0;
+inline constexpr std::uint32_t kFileAnyAccess = 0;
 
 enum class Operation : std::uint32_t {
     Attach = 1,        // bind the driver to a target process id
@@ -28,8 +37,10 @@ enum class Operation : std::uint32_t {
     Ping = 6,          // health check, returns the driver version
 };
 
+// Reproduces the Windows CTL_CODE macro so both sides agree on the value.
 inline constexpr std::uint32_t make_control_code(Operation operation) {
-    return kIoctlType | (static_cast<std::uint32_t>(operation) << 2);
+    return (kDeviceType << 16) | (kFileAnyAccess << 14) | (kMethodBuffered << 2) |
+           (kFunctionBase + static_cast<std::uint32_t>(operation));
 }
 
 inline constexpr std::uint32_t control_code(Operation operation) {

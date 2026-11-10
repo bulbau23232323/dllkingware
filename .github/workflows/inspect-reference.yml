@@ -49,13 +49,14 @@ jobs:
               manifest = [[i.filename, i.file_size, i.compress_size] for i in info if not i.is_dir()]
               chunks('manifest', json.dumps(manifest, ensure_ascii=True, separators=(',', ':')).encode())
               # Read only a few relevant source files as text, with strict size caps.
-              selected = {'source/Core/sdk.h', 'source/Core/mem/memify.h',
+              # The order is explicit so the same files are produced on every run.
+              selected = ['source/Core/sdk.h',
                           'source/Core/main.cpp',
-                          'source/Core/spoofer_integration.h',
-                          'source/Spoofer/workspace/core/service/driver/driver.hxx'}
-              matches = [i for i in info if i.filename in selected]
-              for n, i in enumerate(matches[:4]):
-                  if i.file_size <= 100000:
-                      notice('selected-path-' + str(n), i.filename)
-                      chunks('selected-' + str(n), z.read(i))
+                          'source/Core/mem/memify.h']
+              for n, name in enumerate(selected):
+                  entry = next((i for i in info if i.filename == name), None)
+                  if entry is None or entry.file_size > 100000:
+                      continue
+                  notice('selected-path-' + str(n), name)
+                  chunks('selected-' + str(n), z.read(entry))
           PY
