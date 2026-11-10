@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.24)
-project(Kingware VERSION 0.1.0 LANGUAGES CXX)
+project(Kingware VERSION 0.1.1 LANGUAGES CXX)
+
+# Link the MSVC runtime statically by default so the GUI does not require a
+# separate Visual C++ redistributable. Callers can override this setting.
+if(MSVC AND NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

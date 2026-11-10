@@ -22,7 +22,7 @@ Offsets из сообщения сохранены в `src/offsets.hpp` как *
 
 ## Готовая демо-сборка
 
-Скачайте [архив для Windows x64](https://github.com/bulbau23232323/dllkingware/releases/download/v0.1.0-demo/Kingware-GUI-demo-win64.zip) на странице [релиза v0.1.0-demo](https://github.com/bulbau23232323/dllkingware/releases/tag/v0.1.0-demo), распакуйте его и запустите `Kingware-GUI-demo.exe`. Это только GUI и симуляция, без подключения к Rust и драйверу. Ручной запуск игры и GUI на Windows не проверялся.
+Скачайте [архив для Windows x64](https://github.com/bulbau23232323/dllkingware/releases/download/v0.1.1-demo/Kingware-GUI-demo-win64.zip) на странице [релиза v0.1.1-demo](https://github.com/bulbau23232323/dllkingware/releases/tag/v0.1.1-demo), распакуйте его и запустите `Kingware-GUI-demo.exe`. Это только GUI и симуляция, без подключения к Rust и драйверу. Ручной запуск игры и GUI на Windows не проверялся.
 
 ## Сборка в Windows
 

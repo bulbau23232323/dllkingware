@@ -1,4 +1,4 @@
-KINGWARE GUI DEMO v0.1.0
+KINGWARE GUI DEMO v0.1.1
 
 Windows 10/11 x64; DirectX 11 is required.
 

@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 25
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: v0.1.0-demo
+      RELEASE_TAG: v0.1.1-demo
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -38,6 +38,22 @@ jobs:
             if ($errors.Count -eq 0) { $errors = @(Get-Content build-output.txt | Select-Object -Last 10) }
             foreach ($line in $errors) { Write-Output "::error::$($line.Replace('%', '%25'))" }
             exit $code
+          }
+
+      - name: Verify runtime dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $dumpbin = Get-ChildItem "$vs/VC/Tools/MSVC/*/bin/Hostx64/x64/dumpbin.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $dumpbin) { Write-Output '::error::dumpbin not found'; exit 1 }
+          $dependencies = & $dumpbin.FullName /dependents build/Release/Kingware.exe
+          if ($LASTEXITCODE -ne 0) { Write-Output '::error::Could not inspect executable dependencies'; exit 1 }
+          $dependencies | Write-Output
+          if (($dependencies -join "`n") -match '(?i)\b(?:VCRUNTIME\d+|MSVCP\d+|api-ms-win-crt-[\w-]+|ucrtbase)\.dll') {
+            Write-Output '::error::Executable unexpectedly depends on a separately installed Visual C++ runtime'
+            exit 1
           }
 
       - name: Run tests
@@ -89,7 +105,7 @@ jobs:
               throw 'The release tag already exists for a different commit; refusing to replace its assets.'
             }
           } else {
-            gh release create $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'Kingware GUI v0.1.0 - Demo' --prerelease --draft --notes-file packaging/RELEASE_NOTES.md
+            gh release create $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'Kingware GUI v0.1.1 - Demo' --prerelease --draft --notes-file packaging/RELEASE_NOTES.md
             if ($LASTEXITCODE -ne 0) { throw 'Could not create the draft release.' }
           }
           gh release upload $env:RELEASE_TAG release/Kingware-GUI-demo-win64.zip release/Kingware-GUI-demo-source.zip release/SHA256SUMS.txt --clobber --repo $env:GITHUB_REPOSITORY
