@@ -1,0 +1,80 @@
+name: Build and publish GUI demo
+
+on:
+  # The first push of this session creates the requested demo release. Future
+  # pushes that do not change this workflow will not republish it.
+  push:
+    branches:
+      - arena/54249082-dllkingware
+    paths:
+      - .github/workflows/release-demo.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-release:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: v0.1.0-demo
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Package executable and offline source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path release/runtime, release/source, release/source/third_party/imgui/backends | Out-Null
+
+          Copy-Item build/Release/Kingware.exe release/runtime/Kingware-GUI-demo.exe
+          Copy-Item packaging/README-DEMO.txt release/runtime/README.txt
+          Compress-Archive -Path release/runtime/* -DestinationPath release/Kingware-GUI-demo-win64.zip -CompressionLevel Optimal
+
+          Copy-Item CMakeLists.txt, README.md, .gitignore release/source/
+          Copy-Item src, tests, packaging release/source/ -Recurse
+          $imgui = 'build/_deps/imgui-src'
+          foreach ($file in @('LICENSE.txt', 'imconfig.h', 'imgui.h', 'imgui_internal.h', 'imgui.cpp', 'imgui_draw.cpp', 'imgui_tables.cpp', 'imgui_widgets.cpp', 'imstb_rectpack.h', 'imstb_textedit.h', 'imstb_truetype.h')) {
+            Copy-Item (Join-Path $imgui $file) release/source/third_party/imgui/
+          }
+          foreach ($file in @('imgui_impl_win32.cpp', 'imgui_impl_win32.h', 'imgui_impl_dx11.cpp', 'imgui_impl_dx11.h')) {
+            Copy-Item (Join-Path $imgui "backends/$file") release/source/third_party/imgui/backends/
+          }
+          Compress-Archive -Path release/source/* -DestinationPath release/Kingware-GUI-demo-source.zip -CompressionLevel Optimal
+
+          $sums = foreach ($name in @('Kingware-GUI-demo-win64.zip', 'Kingware-GUI-demo-source.zip')) {
+            $hash = (Get-FileHash -Algorithm SHA256 "release/$name").Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          $sums | Set-Content -Encoding ascii release/SHA256SUMS.txt
+
+      - name: Create release and upload files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY 2>$null | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+            $tagSha = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$env:RELEASE_TAG" --jq .object.sha
+            if ($LASTEXITCODE -ne 0 -or $tagSha.Trim() -ne $env:GITHUB_SHA) {
+              throw 'The release tag already exists for a different commit; refusing to replace its assets.'
+            }
+          } else {
+            gh release create $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title 'Kingware GUI v0.1.0 - Demo' --prerelease --draft --notes-file packaging/RELEASE_NOTES.md
+            if ($LASTEXITCODE -ne 0) { throw 'Could not create the draft release.' }
+          }
+          gh release upload $env:RELEASE_TAG release/Kingware-GUI-demo-win64.zip release/Kingware-GUI-demo-source.zip release/SHA256SUMS.txt --clobber --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not upload release assets.' }
+          gh release edit $env:RELEASE_TAG --draft=false --prerelease --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Could not publish the release.' }

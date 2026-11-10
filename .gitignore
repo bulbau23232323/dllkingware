@@ -1,0 +1,23 @@
+# CMake / Visual Studio
+/build/
+/out/
+/.vs/
+/CMakeUserPresets.json
+# Release archives are published as GitHub release assets, not committed.
+/downloads/
+/release/
+*.user
+*.suo
+*.pdb
+*.ilk
+*.obj
+*.exe
+*.dll
+*.lib
+*.exp
+
+# Local settings / editor files
+imgui.ini
+settings.ini
+.vscode/
+.DS_Store
