@@ -1,0 +1,57 @@
+name: Inspect supplied reference archive (static)
+
+on:
+  push:
+    branches: [arena/54249082-dllkingware]
+    paths: [.github/workflows/inspect-reference.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Download user-supplied release asset as data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/reference"
+          gh release download Rizg --repo "$GITHUB_REPOSITORY" --pattern Cloak-Rust.zip --dir "$RUNNER_TEMP/reference"
+      - name: Examine metadata and selected text without executing archive contents
+        env:
+          ARCHIVE: ${{ runner.temp }}/reference/Cloak-Rust.zip
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, re, zipfile
+          p = os.environ['ARCHIVE']
+          expected = 'd973e53869126869c010458b2afd493ba41b7259ee7ec0fa44de369c90092cdd'
+          with open(p, 'rb') as f:
+              actual = hashlib.sha256(f.read()).hexdigest()
+          if actual != expected:
+              raise SystemExit('Archive SHA-256 does not match GitHub release metadata')
+          def notice(label, data):
+              data = data.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::notice title=' + label + '::' + data)
+          def chunks(label, data):
+              encoded = base64.b64encode(data).decode('ascii')
+              if len(encoded) > 300000:
+                  raise SystemExit(label + ' too large to inspect safely')
+              for index in range(0, len(encoded), 12000):
+                  notice(label + '-' + str(index // 12000), encoded[index:index+12000])
+          with zipfile.ZipFile(p) as z:
+              info = z.infolist()
+              if len(info) > 10000 or sum(i.file_size for i in info) > 200_000_000:
+                  raise SystemExit('Archive exceeds inspection limits')
+              notice('metadata', 'sha256=' + actual + '; entries=' + str(len(info)) + '; uncompressed=' + str(sum(i.file_size for i in info)))
+              manifest = [[i.filename, i.file_size, i.compress_size] for i in info if not i.is_dir()]
+              chunks('manifest', json.dumps(manifest, ensure_ascii=True, separators=(',', ':')).encode())
+              # Read only a specifically named source header, with a strict size cap.
+              matches = [i for i in info if re.search(r'(^|/)memify\.h$', i.filename, re.I)]
+              for n, i in enumerate(matches[:3]):
+                  if i.file_size <= 100000:
+                      notice('selected-path-' + str(n), i.filename)
+                      chunks('selected-' + str(n), z.read(i))
+          PY
