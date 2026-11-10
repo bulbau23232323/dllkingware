@@ -28,10 +28,28 @@ jobs:
         run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          cmake --build build --config Release --parallel 2>&1 | Tee-Object -FilePath build-output.txt
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            $errors = @(Get-Content build-output.txt | Where-Object { $_ -match '(?i)(error\s+C\d+|fatal error|error LNK\d+|error MSB\d+)' } | Select-Object -Last 10)
+            if ($errors.Count -eq 0) { $errors = @(Get-Content build-output.txt | Select-Object -Last 10) }
+            foreach ($line in $errors) { Write-Output "::error::$($line.Replace('%', '%25'))" }
+            exit $code
+          }
 
       - name: Run tests
-        run: ctest --test-dir build -C Release --output-on-failure
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          ctest --test-dir build -C Release --output-on-failure 2>&1 | Tee-Object -FilePath test-output.txt
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            Get-Content test-output.txt | Select-Object -Last 20 | ForEach-Object { Write-Output "::error::$($_.Replace('%', '%25'))" }
+            exit $code
+          }
 
       - name: Package executable and offline source
         shell: pwsh
